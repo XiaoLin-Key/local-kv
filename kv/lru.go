@@ -6,6 +6,7 @@ import (
 
 //基础LRU算法实现层（由力扣146题演变而来）
 
+// 节点
 type Node struct {
 	key        string
 	value      ByteView
@@ -13,6 +14,7 @@ type Node struct {
 	prev, next *Node
 }
 
+// 缓存
 type LRUCache struct {
 	maxBytes   int64
 	nowBytes   int64
@@ -20,6 +22,7 @@ type LRUCache struct {
 	head, tail *Node
 }
 
+// 初始化
 func NewCache(maxBytes int64) LRUCache {
 	l := LRUCache{
 		maxBytes: maxBytes,
@@ -36,6 +39,7 @@ func NewCache(maxBytes int64) LRUCache {
 func (this *LRUCache) Get(key string) []byte {
 	this.tryEvictExpired(5)
 	if node, ok := this.cache[key]; ok {
+		// 惰性删除
 		if node.expire > 0 && node.expire < time.Now().UnixNano() {
 			this.Delete(node.key)
 			return nil
@@ -75,6 +79,7 @@ func (this *LRUCache) Put(key string, value []byte, ttl time.Duration) error {
 		this.nowBytes += int64(len(key)) + view.Len()
 	}
 	if this.nowBytes > this.maxBytes {
+		// 试探性删除，权衡Put速度以及保护热数据
 		this.tryEvictExpired(20)
 		if this.nowBytes > this.maxBytes {
 			this.removeTail()
@@ -122,6 +127,7 @@ func (this *LRUCache) removeTail() {
 	}
 }
 
+// 随机选取，删除过期数据
 func (this *LRUCache) tryEvictExpired(limit int) {
 	count := 0
 	now := time.Now().UnixNano()
@@ -136,7 +142,7 @@ func (this *LRUCache) tryEvictExpired(limit int) {
 	}
 }
 
-// 这个方法只应由后台任务在低峰期调用
+// 全量扫描，这个方法只应由后台任务在低峰期调用
 func (this *LRUCache) CleanAllExpired() {
 	now := time.Now().UnixNano()
 	for _, node := range this.cache {

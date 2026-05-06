@@ -1,5 +1,6 @@
 package kv
 
+// 视图，避免被更改
 type ByteView struct {
 	b []byte
 }
